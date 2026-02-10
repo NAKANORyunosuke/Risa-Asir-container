@@ -24,7 +24,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libcerf \
     pkg-config \
     libcerf-dev \
-    texi2html \
+    texi2html
 
     
 
