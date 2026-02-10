@@ -1,32 +1,75 @@
 FROM ubuntu:latest
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-    git \
+    \
+    # ----- 最優先：ビルドそのものに必須 -----
     build-essential \
     autoconf \
+    bison \
+    flex \
+    file \
     curl \
+    git \
+    pkg-config \
+    \
+    # ----- 数値計算・OpenXM 本体依存 -----
+    libcerf2 \
+    libcerf-dev \
+    \
+    # ----- 端末・UI・gnuplot 関連 -----
     libncurses5-dev \
     libncursesw5-dev \
     libncurses-dev \
     libtinfo-dev \
-    bison \
-    file \
-    flex \
     xorg-dev \
-    # ここまででビルド自体は成功
+    \
+    # ----- gd（画像/texi2html/gnuplot 等で検出されがち）-----
+    libgd-dev \
+    libgd3 \
+    libpng-dev \
+    libjpeg-dev \
+    \
+    # ----- gnuplot 高品質描画（cairo / pango）-----
+    libcairo2-dev \
+    libpango1.0-dev \
+    libglib2.0-dev \
+    \
+    # ----- gnuplot Qt 端末（GUI）-----
+    qtbase5-dev \
+    qttools5-dev \
+    libqt5svg5-dev \
+    \
+    # ----- configure / doc 判定で必須になりがち -----
     texinfo \
+    texi2html \
     sharutils \
+    \
+    # ----- TeX 検出・kpsexpand（最重要 TeX ユーティリティ） -----
+    texlive-extra-utils \
+    \
+    # ----- LaTeX基本環境（doc 生成の最低ライン） -----
+    texlive-latex-recommended \
+    texlive-fonts-recommended \
+    \
+    # ----- LaTeX拡張（doc が途中で死ぬのを防ぐ） -----
+    texlive-latex-extra \
+    \
+    # ----- XeTeX / Unicode（日本語・近代 LaTeX） -----
+    texlive-xetex \
+    texlive-lang-japanese \
+    \
+    # ----- LaTeX→HTML / 画像変換系 -----
     latex2html \
     ghostscript \
     netpbm \
-    texlive-lang-japanese \
+    \
+    # ----- 補助ツール -----
+    nkf \
     default-jdk \
-    libcerf \
-    pkg-config \
-    libcerf-dev \
-    texi2html
+    \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-    
 
 RUN git clone https://github.com/openxm-org/OpenXM
 RUN git clone https://github.com/openxm-org/OpenXM_contrib2
@@ -34,23 +77,11 @@ RUN git clone https://github.com/openxm-org/OpenXM_contrib2
 
 WORKDIR /OpenXM/src
 ENV PATH="/OpenXM/bin:${PATH}"
-# ↓は意味があったら残す
-# #10 359.8 mkdir work
-# 10 359.8 mkdir: cannot create directory 'work': File exists
-# 10 359.8 make[1]: [Makefile:17: fetch] Error 1 (ignored)
-# 10 359.8 if [ ! -f work/.configure_done ]; then \
-# 10 359.8 	prefix=`cd ../..; pwd` ; \
-# 10 359.8 	(cd work/gnuplot-5.4.0 ; ./configure --with-x --prefix="$prefix" --without-pdf) ; \
-# 10 359.8 fi
-# 10 359.9 configure: WARNING: unrecognized options: --without-pdf
-# 10 359.9 ./configure: line 2703: 0: command not found
-# を解決するために、一旦 work ディレクトリを削除してから configure を実行する
-RUN rm -rf work
 RUN make configure
 RUN make install
 
 WORKDIR /OpenXM/rc
 RUN make && mkdir ~/bin && cp openxm ~/bin
 
-
+WORKDIR /
 CMD ["/bin/bash"]
