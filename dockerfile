@@ -22,6 +22,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libncurses-dev \
     libtinfo-dev \
     xorg-dev \
+    libreadline-dev \
     \
     # ----- gd（画像/texi2html/gnuplot 等で検出されがち）-----
     libgd-dev \
