@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-IMAGE_NAME="risa-asir:latest"
+IMAGE_NAME="${RISA_ASIR_IMAGE:-risa-asir:latest}"
 CONTAINER_NAME="risa-asir-container"
 
 # container が存在すれば停止・削除

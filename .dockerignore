@@ -1,0 +1,8 @@
+.git
+.codex
+.generated
+cluster/.generated
+single/build.log
+build.log
+error.log
+report.md

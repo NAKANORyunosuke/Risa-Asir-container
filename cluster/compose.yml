@@ -4,7 +4,7 @@ services:
     build:
       context: ..
       dockerfile: ../dockerfile
-    image: risa-asir:latest
+    image: ${RISA_ASIR_IMAGE:-risa-asir:latest}
     hostname: asir-master
     working_dir: /workspace
     command: ["sleep", "infinity"]

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-IMAGE_NAME="risa-asir:latest"
+IMAGE_NAME="${RISA_ASIR_IMAGE:-risa-asir:latest}"
 CONTAINER_NAME="risa-asir-container"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
