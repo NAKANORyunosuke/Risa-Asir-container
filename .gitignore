@@ -1,3 +1,4 @@
 *.log
 report.md
 .generated/
+cluster/.generated/

@@ -2,8 +2,8 @@ services:
   # master は待受と Asir 実行だけを担当する。
   master:
     build:
-      context: .
-      dockerfile: dockerfile
+      context: ..
+      dockerfile: ../dockerfile
     image: risa-asir:latest
     hostname: asir-master
     working_dir: /workspace
@@ -11,4 +11,4 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - .:/workspace
+      - ..:/workspace

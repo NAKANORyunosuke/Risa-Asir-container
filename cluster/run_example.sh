@@ -3,10 +3,11 @@ set -eu
 
 # このスクリプトは、cluster 用 compose を起動し、
 # master 上で Asir の並列サンプルを実行するところまでをまとめて行う。
-# worker 定義と Asir サンプルは、指定された worker 数に応じて .generated/ に生成する。
+# worker 定義と Asir サンプルは、指定された worker 数に応じて cluster/.generated/ に生成する。
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-BASE_COMPOSE_FILE="${SCRIPT_DIR}/compose.cluster.yml"
+REPO_ROOT=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
+BASE_COMPOSE_FILE="${SCRIPT_DIR}/compose.yml"
 GENERATED_DIR="${SCRIPT_DIR}/.generated"
 GENERATED_COMPOSE_FILE="${GENERATED_DIR}/compose.cluster.generated.yml"
 GENERATED_EXAMPLE_FILE="${GENERATED_DIR}/compose_cluster_example.generated.rr"
@@ -19,7 +20,7 @@ JOB_VARIANTS=4
 usage() {
     cat <<'EOF'
 使い方:
-  ./run_cluster_example.sh [N] [--keep] [--build]
+  ./cluster/run_example.sh [N] [--keep] [--build]
 
 引数:
   N            実行する worker 数 (デフォルト: 4)
@@ -58,14 +59,14 @@ EOF
       - master
     hostname: asir-worker${i}
     working_dir: /workspace
-    entrypoint: ["/bin/sh", "/workspace/scripts/worker-entrypoint.sh"]
+    entrypoint: ["/bin/sh", "/workspace/cluster/scripts/worker-entrypoint.sh"]
     environment:
       MASTER_HOST: asir-master
       CONTROL_PORT: "${control_port}"
       SERVER_PORT: "${server_port}"
       WORKER_TAG: "worker${i}:0"
     volumes:
-      - ${SCRIPT_DIR}:/workspace
+      - ${REPO_ROOT}:/workspace
 EOF
         i=$((i + 1))
     done
@@ -73,7 +74,7 @@ EOF
 
 generate_example_rr() {
     cat > "$GENERATED_EXAMPLE_FILE" <<EOF
-/* run_cluster_example.sh が生成する動的サンプル */
+/* cluster/run_example.sh が生成する動的サンプル */
 WorkerCount = ${WORKERS}\$
 ControlBasePort = ${BASE_CONTROL_PORT}\$
 PortStep = ${PORT_STEP}\$
@@ -220,11 +221,11 @@ compose_cmd up -d master $WORKER_SERVICES
 echo "[4/4] master 上で Asir サンプルを実行します..."
 # Asir はファイル引数実行ではなく、load("...")$ で読み込む。
 compose_cmd exec -T master asir <<EOF
-load("/workspace/.generated/compose_cluster_example.generated.rr")$
+load("/workspace/cluster/.generated/compose_cluster_example.generated.rr")$
 quit;
 EOF
 
 if [ "$KEEP_CLUSTER" -eq 1 ]; then
     echo "cluster は起動したままです。"
-    echo "停止する場合: docker compose -p ${PROJECT_NAME} -f compose.cluster.yml -f .generated/compose.cluster.generated.yml down"
+    echo "停止する場合: docker compose -p ${PROJECT_NAME} -f cluster/compose.yml -f cluster/.generated/compose.cluster.generated.yml down"
 fi
