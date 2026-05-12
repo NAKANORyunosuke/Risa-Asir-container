@@ -1,6 +1,6 @@
 # ghcr/
 
-GHCR に公開したイメージ `ghcr.io/nakanoryunosuke/risa-asir-container:latest` を使うための入口です。
+GHCR に公開したイメージ `ghcr.io/nakanoryunosuke/risa-asir-container:latest` を使うための入口です.
 
 - `pull.sh`: GHCR イメージを pull する
 - `single/run.sh`: GHCR イメージで単一コンテナを起動する

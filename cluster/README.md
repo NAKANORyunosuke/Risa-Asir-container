@@ -1,6 +1,6 @@
 # cluster/
 
-複数 worker を使った cluster 実行用のファイルを置くディレクトリです。
+複数 worker を使った cluster 実行用のファイルを置くディレクトリです.
 
 - `compose.yml`: `master` だけを定義する base compose
 - `run_example.sh`: 任意 worker 数で cluster を起動して Asir サンプルを流す
