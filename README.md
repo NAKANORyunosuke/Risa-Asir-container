@@ -172,7 +172,7 @@ cluster を起動したまま残す:
 
 `dockerfile` では主に次を実行します。
 
-1. `ubuntu:latest` をベースイメージとして使用
+1. `ubuntu:24.04` をベースイメージとして使用
 2. OpenXM ビルドに必要な開発ツールやライブラリを `apt-get` で導入
 3. `OpenXM`, `OpenXM_contrib2` を clone
 4. `/OpenXM/src` で `make configure`, `make install` を実行
@@ -190,4 +190,4 @@ cluster を起動したまま残す:
 ## 注意点
 
 - このリポジトリのビルド定義ファイル名は `dockerfile` (小文字) です
-- `ubuntu:latest` を使用しているため、将来的にビルド結果が変わる可能性があります
+- `ubuntu:24.04` に固定しているため、`latest` 追従によるビルド変動は避けています
