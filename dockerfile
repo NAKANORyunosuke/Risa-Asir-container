@@ -77,7 +77,7 @@ RUN git clone https://github.com/openxm-org/OpenXM_contrib2
 
 
 WORKDIR /OpenXM/src
-ENV PATH="/OpenXM/bin:${PATH}"
+ENV PATH="/OpenXM/bin:/root/bin:${PATH}"
 RUN make configure
 RUN make install
 

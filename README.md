@@ -6,10 +6,14 @@ OpenXM(Risa/Asir)をDocker上でビルドして使うためのリポジトリで
 ## ファイル構成
 
 - `dockerfile`: イメージ定義
+- `AGENTS.md`: このリポジトリ向けの運用メモ
 - `setup_docker.sh`: Dockerの初期導入(apt系OS向け)
 - `build_container.sh`: イメージをビルド(`risa-asir:latest`)し, ログを`build.log`に保存
 - `run_container.sh`: コンテナ(`risa-asir-container`)を作成/起動して`bash`に入る
+- `compose.cluster.yml`: cluster 実行用の base compose (`master`のみ定義)
+- `run_cluster_example.sh`: 任意 worker 数で cluster を起動し, Asir サンプルを実行
 - `delete_container.sh`: コンテナとイメージを削除
+- `.generated/`: cluster 実行時に compose / Asir サンプルを生成する作業ディレクトリ(管理対象外)
 
 ## dockerfile の内容
 
@@ -69,6 +73,87 @@ DOCKER_BUILDKIT=1 docker build --no-cache -t risa-asir .
 ```
 
 既存コンテナがあれば再利用し, 停止中なら起動してから`bash`に接続します. 
+
+## Docker Compose で複数 worker を直結する
+
+`compose.cluster.yml` は `master` だけを定義する base compose です.  
+worker 定義と Asir サンプルは, `run_cluster_example.sh` が worker 数に応じて `.generated/` に生成します.  
+worker は `ssh` を使わず, `ox_launch` を entrypoint から直接実行して master の `control/server` ポートへ接続します.
+
+### 1.まとめて実行する
+
+4 worker の場合:
+
+```bash
+./run_cluster_example.sh
+```
+
+2 worker の場合:
+
+```bash
+./run_cluster_example.sh 2
+```
+
+8 worker の場合:
+
+```bash
+./run_cluster_example.sh 8
+```
+
+cluster を起動したまま残す場合:
+
+```bash
+./run_cluster_example.sh 8 --keep
+```
+
+`dockerfile` や OpenXM 本体を作り直したいときだけ build する場合:
+
+```bash
+./run_cluster_example.sh 8 --build
+```
+
+このスクリプトは内部で
+
+1. `try_bind_listen()` で待受
+2. `try_accept()` と `register_server()` で worker を登録
+3. `ox_rpc()` で各 worker に計算を投げる
+4. `ox_select()` と `ox_get()` で ready になった順に回収する
+
+という最小手順の Asir サンプルを `.generated/compose_cluster_example.generated.rr` に生成して実行します.
+
+`asir ./file.rr` のような引数実行はできず, `load("...")$` でファイルを読む形になります.
+
+### 2.生成された compose / sample を手で使う
+
+`./run_cluster_example.sh 8 --keep` を実行した後なら, 生成済みファイルを使って手動操作もできます.
+
+master に入る場合:
+
+```bash
+docker compose -p risa-asir-cluster -f compose.cluster.yml -f .generated/compose.cluster.generated.yml exec master bash
+```
+
+生成済み Asir サンプルをもう一度流す場合:
+
+```bash
+docker compose -p risa-asir-cluster -f compose.cluster.yml -f .generated/compose.cluster.generated.yml exec -T master asir <<'EOF'
+load("/workspace/.generated/compose_cluster_example.generated.rr")$
+quit;
+EOF
+```
+
+### 3.停止
+
+```bash
+docker compose -p risa-asir-cluster -f compose.cluster.yml -f .generated/compose.cluster.generated.yml down
+```
+
+### 補足
+
+- worker のポート割り当ては `34101/34102` から 10 ずつずらして自動生成します.
+- 生成された compose は `.generated/compose.cluster.generated.yml` に保存されます.
+- 生成された Asir サンプルは `.generated/compose_cluster_example.generated.rr` に保存されます.
+- `scripts/worker-entrypoint.sh` は master が待受を始める前でも再接続を繰り返します.
 
 ### 3.クリーンアップ
 

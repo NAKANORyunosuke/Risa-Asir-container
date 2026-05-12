@@ -1,0 +1,57 @@
+/* compose.cluster.yml と揃えた固定ポート */
+ControlPorts = [34101,34111,34121,34131]$
+ServerPorts = [34102,34112,34122,34132]$
+Jobs = [x^40-y^40,x^80-y^80,x^120-y^120,x^160-y^160]$
+SM_popSerializedLocalObject = 258$
+
+N = length(ControlPorts)$
+Ids = newvect(N)$
+CListen = newvect(N)$
+SListen = newvect(N)$
+Results = newvect(N)$
+Finished = newvect(N)$
+
+/* worker ごとの control/server ポートで待受を開始 */
+for (I=0; I<N; I++) {
+  CListen[I] = try_bind_listen(ControlPorts[I]);
+  SListen[I] = try_bind_listen(ServerPorts[I]);
+}
+
+print("Waiting for 4 workers to connect ...")$
+/* worker からの 4 本の接続を受け取り、OpenXM server として登録する */
+for (I=0; I<N; I++) {
+  CSocket = try_accept(CListen[I],ControlPorts[I]);
+  SSocket = try_accept(SListen[I],ServerPorts[I]);
+  Ids[I] = register_server(CSocket,ControlPorts[I],SSocket,ServerPorts[I]);
+}
+
+print(["registered worker ids",vtol(Ids)])$
+
+/* 各 worker に計算を投げ、結果を ox_get で拾える状態にする */
+for (I=0; I<N; I++) {
+  ox_rpc(Ids[I],"fctr",Jobs[I]);
+  ox_push_cmd(Ids[I],SM_popSerializedLocalObject);
+}
+
+Done = 0$
+/* ready になった worker から順に結果を回収する */
+while (Done < N) {
+  Ready = ox_select(vtol(Ids));
+  for (J=0; J<length(Ready); J++) {
+    Id = Ready[J];
+    for (K=0; K<N; K++) {
+      if (Ids[K] == Id && Finished[K] == 0) {
+        Results[K] = ox_get(Id);
+        Finished[K] = 1;
+        Done++;
+        break;
+      }
+    }
+  }
+}
+
+print("All results collected.")$
+Results;
+
+/* 最後に worker を shutdown する */
+for (I=0; I<N; I++) ox_shutdown(Ids[I]);
